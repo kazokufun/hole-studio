@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { GlassCard } from './shared/GlassCard';
 import type { PromptHistoryEntry } from '../types';
 import { Loader } from './shared/Loader';
@@ -8,9 +8,16 @@ interface PromptHistoryTableProps {
   history: PromptHistoryEntry[];
   isLoading: boolean;
   onSave: (entry: { title: string, prompt: string }) => void;
+  userPrompt: string;
 }
 
-export const PromptHistoryTable: React.FC<PromptHistoryTableProps> = ({ history, isLoading, onSave }) => {
+const DownloadIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+    </svg>
+);
+
+export const PromptHistoryTable: React.FC<PromptHistoryTableProps> = ({ history, isLoading, onSave, userPrompt }) => {
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [savedId, setSavedId] = useState<number | null>(null);
 
@@ -40,10 +47,50 @@ export const PromptHistoryTable: React.FC<PromptHistoryTableProps> = ({ history,
     }, 2000);
   };
 
+  const handleDownload = useCallback(() => {
+    playAudio('/tombol.mp3');
+    const header = `**${userPrompt}**\n\n`;
+    const promptsContent = history
+      .map(entry => entry.prompt)
+      .join('\n');
+    const fileContent = header + promptsContent;
+
+    const safeFilename = userPrompt
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '_')
+      .replace(/[^a-z0-9_.-]/g, '')
+      .substring(0, 50) || 'prompts';
+    
+    const filename = `${safeFilename}.txt`;
+
+    const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [userPrompt, history]);
+
 
   return (
     <GlassCard className="p-6 font-mono text-white/90 flex flex-col h-full">
-      <h3 className="text-sm font-bold tracking-widest mb-3 text-white/70">PROMPT TABLE:</h3>
+      <div className="flex justify-between items-center mb-3">
+        <h3 className="text-sm font-bold tracking-widest text-white/70">PROMPT TABLE:</h3>
+        {history.length > 0 && !isLoading && (
+            <button
+                onClick={handleDownload}
+                className="flex items-center gap-2 text-xs font-bold tracking-widest text-cyan-400 border border-cyan-400/50 rounded-md py-1 px-3 hover:bg-cyan-400/20 transition-colors"
+                title="Download prompts as .txt"
+            >
+                <DownloadIcon />
+                UNDUH
+            </button>
+        )}
+      </div>
       <div className="overflow-auto flex-grow relative">
         {isLoading && (
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-10 rounded-b-2xl">
