@@ -283,6 +283,7 @@ export default function App() {
                                       history={history} 
                                       isLoading={isGenerating}
                                       onSave={handleSavePromptFromHistory}
+                                      userPrompt={userPrompt}
                                     />
                                 </div>
                                 </div>
