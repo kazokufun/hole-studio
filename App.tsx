@@ -13,10 +13,20 @@ import { PinCard } from './components/PinCard';
 import { NotificationContainer } from './components/shared/Notification';
 
 const CUSTOM_PROMPTS_STORAGE_KEY = 'customUserPrompts';
+const CORRECT_PIN = "332211"; // The one true PIN
 
 export default function App() {
   // State for PIN Authentication
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    try {
+        const storedPin = localStorage.getItem('authenticatedPin');
+        // The user is authenticated if the stored PIN matches the current correct PIN.
+        return storedPin === CORRECT_PIN;
+    } catch (error) {
+        console.error("Failed to read authenticated PIN from localStorage", error);
+        return false;
+    }
+  });
 
   // State for Image Analysis Flow
   const [imageFile, setImageFile] = useState<File | null>(null);
