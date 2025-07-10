@@ -60,6 +60,13 @@ export const PinCard: React.FC<PinCardProps> = ({ onSuccess }) => {
         const enteredPin = pin.join('');
         if (enteredPin === CORRECT_PIN) {
             setError('');
+            try {
+                // On success, save the correct PIN to local storage for future sessions.
+                localStorage.setItem('authenticatedPin', CORRECT_PIN);
+            } catch (error) {
+                console.error("Failed to save PIN to localStorage", error);
+                // Continue even if localStorage fails. The user will just have to enter the PIN next time.
+            }
             onSuccess();
         } else {
             setError('Invalid PIN. Please try again.');
