@@ -1,38 +1,32 @@
-let isAudioUnlocked = false;
+// Global audio context
+let audioContext: AudioContext | null = null;
+
+const initAudioContext = () => {
+    if (!audioContext) {
+        try {
+            // Standard AudioContext with fallback for older browsers
+            const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+            audioContext = new AudioContext();
+        } catch (e) {
+            console.error("Web Audio API is not supported in this browser.", e);
+        }
+    }
+    return audioContext;
+};
 
 /**
- * Unlocks the browser's audio context.
- * This MUST be called as a direct result of a user interaction (e.g., a click event).
- * It attempts to play a silent sound to "prime" the audio system.
+ * Unlocks the audio context. Must be called from a user-initiated event (like a click).
+ * This is necessary because browsers block audio from playing until the user interacts with the page.
  */
 export const unlockAudio = () => {
-    if (isAudioUnlocked) {
-        return;
-    }
-
-    try {
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        
-        // Create a buffer source
-        const source = audioContext.createBufferSource();
-        source.buffer = audioContext.createBuffer(1, 1, 22050); // 1-sample buffer, 1 channel, 22050Hz sample rate
-        source.connect(audioContext.destination);
-
-        // Play the silent sound
-        // Some browsers require a user gesture to start the audio context.
-        if (typeof source.start === 'function') {
-            source.start(0);
-        }
-        
-        // Resume context if it's suspended, which can happen if it was created before a user gesture.
-        if (audioContext.state === 'suspended') {
-            audioContext.resume();
-        }
-        
-        isAudioUnlocked = true;
-        console.log("Audio Context has been unlocked.");
-    } catch (e) {
-        console.error("Failed to unlock audio context:", e);
+    const context = initAudioContext();
+    // Resume the context if it's in a suspended state (common in modern browsers before user interaction)
+    if (context && context.state === 'suspended') {
+        context.resume().then(() => {
+             console.log("AudioContext resumed successfully.");
+        }).catch(e => {
+            console.error("Error resuming AudioContext:", e);
+        });
     }
 };
 
@@ -44,6 +38,9 @@ export const unlockAudio = () => {
  * @param soundUrl The path to the audio file (e.g., '/tombol.mp3').
  */
 export const playAudio = (soundUrl: string) => {
+  // Ensure the context is initialized, though unlockAudio should have been called first.
+  initAudioContext();
+  
   const audio = new Audio(soundUrl);
   const playPromise = audio.play();
 
@@ -52,7 +49,7 @@ export const playAudio = (soundUrl: string) => {
       // Autoplay was prevented. This is a common browser policy,
       // especially before the user has interacted with the page.
       // We log this for debugging but it's not a critical user-facing error.
-      console.warn(`Audio playback for "${soundUrl}" was prevented. Ensure audio is unlocked via a user gesture.`, error);
+      console.warn(`Audio playback for "${soundUrl}" was prevented. This is often fixed after the first user interaction.`, error);
     });
   }
 };
