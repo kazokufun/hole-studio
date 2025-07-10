@@ -2,6 +2,7 @@
 import React, { useState, useRef, ChangeEvent, KeyboardEvent, ClipboardEvent, useEffect } from 'react';
 import { GlassCard } from './shared/GlassCard';
 import { ButtonAnimations } from './shared/ButtonAnimations';
+import { unlockAudio } from '../services/audioService';
 
 const CORRECT_PIN = "332211";
 
@@ -52,6 +53,9 @@ export const PinCard: React.FC<PinCardProps> = ({ onSuccess }) => {
     };
     
     const handleSubmit = () => {
+        // Unlock audio on the first significant user interaction.
+        unlockAudio();
+
         const enteredPin = pin.join('');
         if (enteredPin === CORRECT_PIN) {
             setError('');
