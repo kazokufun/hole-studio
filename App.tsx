@@ -61,6 +61,26 @@ export default function App() {
     }
   });
 
+  // State for Animation Toggle
+  const [isAnimationEnabled, setIsAnimationEnabled] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('isAnimationEnabled');
+      // Default to true if not set
+      return saved !== null ? JSON.parse(saved) : true;
+    } catch {
+      return true;
+    }
+  });
+
+  // Effect to save animation preference
+  useEffect(() => {
+    try {
+      localStorage.setItem('isAnimationEnabled', JSON.stringify(isAnimationEnabled));
+    } catch (error) {
+      console.error("Failed to save animation preference to localStorage", error);
+    }
+  }, [isAnimationEnabled]);
+
   // State for Custom Prompts (lifted from CostumeCard)
   const [customPrompts, setCustomPrompts] = useState<PromptHistoryEntry[]>(() => {
     try {
@@ -220,8 +240,8 @@ export default function App() {
 
 
   return (
-    <div className="min-h-screen w-full font-sans relative">
-      <BackgroundAnimations />
+    <div className={`min-h-screen w-full font-sans relative ${!isAnimationEnabled ? 'simple-background' : ''}`}>
+      {isAnimationEnabled && <BackgroundAnimations />}
       <NotificationContainer notifications={notifications} onRemove={removeNotification} />
       
       {!isAuthenticated ? (
@@ -233,6 +253,8 @@ export default function App() {
                 onClose={() => setIsSettingsOpen(false)}
                 apiKeys={apiKeys}
                 setApiKeys={setApiKeys}
+                isAnimationEnabled={isAnimationEnabled}
+                setIsAnimationEnabled={setIsAnimationEnabled}
             />
             <div className="relative z-20 min-h-screen w-full p-4 md:p-8 flex items-center justify-center">
                 <main className="w-full max-w-7xl mx-auto h-[90vh]">
