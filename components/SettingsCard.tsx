@@ -14,6 +14,8 @@ interface SettingsCardProps {
   onClose: () => void;
   apiKeys: { key1: string; key2: string; key3: string; };
   setApiKeys: (keys: { key1: string; key2: string; key3: string; }) => void;
+  isAnimationEnabled: boolean;
+  onAnimationToggle: (enabled: boolean) => void;
 }
 
 export const SettingsCard: React.FC<SettingsCardProps> = ({
@@ -21,6 +23,8 @@ export const SettingsCard: React.FC<SettingsCardProps> = ({
   onClose,
   apiKeys,
   setApiKeys,
+  isAnimationEnabled,
+  onAnimationToggle,
 }) => {
   const [localKeys, setLocalKeys] = useState(apiKeys);
 
@@ -45,7 +49,12 @@ export const SettingsCard: React.FC<SettingsCardProps> = ({
   const handleClose = () => {
     playAudio('/tombol.mp3');
     onClose();
-  }
+  };
+  
+  const handleAnimationToggle = () => {
+    playAudio('/tombol.mp3');
+    onAnimationToggle(!isAnimationEnabled);
+  };
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 font-mono text-white/90 p-4">
@@ -58,9 +67,37 @@ export const SettingsCard: React.FC<SettingsCardProps> = ({
           <CloseIcon />
         </button>
         
-        <h2 className="text-xl font-bold tracking-wider mb-2">API Key Settings</h2>
-        <p className="text-sm text-white/60 mb-6">
-            Provide up to 3 user API keys. The app will automatically try them in order if one fails (e.g., reaches a rate limit). The default app key will be used as a final fallback.
+        <h2 className="text-xl font-bold tracking-wider mb-6">Settings</h2>
+        
+        {/* Visuals Section */}
+        <div className="p-4 rounded-lg border-2 border-white/20 bg-black/20 mb-6">
+            <div className="flex justify-between items-center">
+                <div className="flex flex-col">
+                    <label className="font-semibold block">Background Animation</label>
+                    <p className="text-xs text-white/60 pt-1">Toggle the dynamic effect for performance.</p>
+                </div>
+                <button
+                    onClick={handleAnimationToggle}
+                    role="switch"
+                    aria-checked={isAnimationEnabled}
+                    className={`relative inline-flex flex-shrink-0 items-center h-6 rounded-full w-11 transition-colors duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black/50 focus:ring-cyan-500 ${
+                        isAnimationEnabled ? 'bg-cyan-500' : 'bg-gray-600'
+                    }`}
+                >
+                    <span
+                        className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform duration-300 ease-in-out ${
+                        isAnimationEnabled ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                        aria-hidden="true"
+                    />
+                </button>
+            </div>
+        </div>
+
+        {/* API Key Section */}
+        <h3 className="text-lg font-bold tracking-wider mb-2">API Keys</h3>
+        <p className="text-sm text-white/60 mb-4">
+            Provide up to 3 user API keys. The app will automatically try them in order if one fails. The default app key is a final fallback.
         </p>
 
         <div className="space-y-4">
