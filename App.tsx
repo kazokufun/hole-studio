@@ -13,20 +13,10 @@ import { PinCard } from './components/PinCard';
 import { NotificationContainer } from './components/shared/Notification';
 
 const CUSTOM_PROMPTS_STORAGE_KEY = 'customUserPrompts';
-const CORRECT_PIN = "332211"; // The one true PIN
 
 export default function App() {
   // State for PIN Authentication
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    try {
-        const storedPin = localStorage.getItem('authenticatedPin');
-        // The user is authenticated if the stored PIN matches the current correct PIN.
-        return storedPin === CORRECT_PIN;
-    } catch (error) {
-        console.error("Failed to read authenticated PIN from localStorage", error);
-        return false;
-    }
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   // State for Image Analysis Flow
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -75,18 +65,6 @@ export default function App() {
     return [{ id: 1, title: 'My First Saved Prompt', prompt: 'A futuristic cityscape with flying cars, neon signs, and rainy streets, cinematic lighting, ultra-detailed.' }];
   });
 
-  // State for background animation preference
-  const [isAnimationEnabled, setIsAnimationEnabled] = useState<boolean>(() => {
-    try {
-      const saved = localStorage.getItem('isAnimationEnabled');
-      // Default to true on first visit (when 'saved' is null)
-      return saved === null ? true : JSON.parse(saved);
-    } catch {
-      return true; // Default to true if parsing fails
-    }
-  });
-
-
   // Effect to save custom prompts to localStorage whenever they change
   useEffect(() => {
     try {
@@ -101,15 +79,6 @@ export default function App() {
     localStorage.setItem('userApiKeys', JSON.stringify(apiKeys));
   }, [apiKeys]);
   
-  // Effect to save animation preference to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem('isAnimationEnabled', JSON.stringify(isAnimationEnabled));
-    } catch (error) {
-      console.error("Failed to save animation preference to localStorage", error);
-    }
-  }, [isAnimationEnabled]);
-
   const removeNotification = useCallback((id: number) => {
       setNotifications(prev => prev.filter(n => n.id !== id));
   }, []);
@@ -242,7 +211,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen w-full font-sans relative">
-      {isAnimationEnabled && <BackgroundAnimations />}
+      <BackgroundAnimations />
       <NotificationContainer notifications={notifications} onRemove={removeNotification} />
       
       {!isAuthenticated ? (
@@ -254,8 +223,6 @@ export default function App() {
                 onClose={() => setIsSettingsOpen(false)}
                 apiKeys={apiKeys}
                 setApiKeys={setApiKeys}
-                isAnimationEnabled={isAnimationEnabled}
-                onAnimationToggle={setIsAnimationEnabled}
             />
             <div className="relative z-20 min-h-screen w-full p-4 md:p-8 flex items-center justify-center">
                 <main className="w-full max-w-7xl mx-auto h-[90vh]">
@@ -306,7 +273,6 @@ export default function App() {
                                       history={history} 
                                       isLoading={isGenerating}
                                       onSave={handleSavePromptFromHistory}
-                                      userPrompt={userPrompt}
                                     />
                                 </div>
                                 </div>
