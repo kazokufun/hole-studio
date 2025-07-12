@@ -1,8 +1,8 @@
+
 import React, { useCallback, useState } from 'react';
 import { GlassCard } from './shared/GlassCard';
 import { ButtonAnimations } from './shared/ButtonAnimations';
 import { Loader } from './shared/Loader';
-import { OnlineUsers } from './shared/OnlineUsers';
 
 
 const SettingsIcon = () => (
@@ -65,8 +65,7 @@ export const ImageAndResultCard: React.FC<ImageAndResultCardProps> = ({
 
   return (
     <GlassCard className="p-6 flex flex-col space-y-4 h-full font-mono text-white/90 relative">
-      <div className="absolute top-4 right-4 flex items-center space-x-2 z-10">
-        <OnlineUsers />
+      <div className="absolute top-4 right-4 z-10">
         <button 
           onClick={onOpenSettings} 
           className="p-2 text-white/50 hover:text-white hover:rotate-90 transition-all duration-500"
