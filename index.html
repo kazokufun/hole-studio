@@ -52,59 +52,6 @@
         outline: none;
         box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.4);
       }
-
-      /* Simple background for when animations are off */
-      .simple-background {
-        background-color: #1a1a1a;
-        background-image: radial-gradient(ellipse at bottom, #071931 0%, #1a1a1a 70%);
-      }
-
-      /* Toggle switch styles */
-      .toggle-switch {
-        position: relative;
-        display: inline-block;
-        width: 50px;
-        height: 28px;
-        flex-shrink: 0;
-      }
-      .toggle-switch input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-      }
-      .slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: rgba(0,0,0,0.5);
-        border: 2px solid #9ca3af;
-        transition: .4s;
-        border-radius: 28px;
-      }
-      .slider:before {
-        position: absolute;
-        content: "";
-        height: 20px;
-        width: 20px;
-        left: 2px;
-        bottom: 2px;
-        background-color: white;
-        transition: .4s;
-        border-radius: 50%;
-      }
-      input:checked + .slider {
-        background-color: #22d3ee;
-        border-color: #22d3ee;
-      }
-      input:focus + .slider {
-        box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.4);
-      }
-      input:checked + .slider:before {
-        transform: translateX(22px);
-      }
     </style>
   <script type="importmap">
 {
@@ -118,8 +65,10 @@
   }
 }
 </script>
+<link rel="stylesheet" href="/index.css">
 </head>
   <body class="bg-[#1a1a1a]">
     <div id="root"></div>
-  </body>
+  <script type="module" src="/index.tsx"></script>
+</body>
 </html>
