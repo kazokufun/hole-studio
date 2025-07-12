@@ -79,7 +79,7 @@ export const ImageAndResultCard: React.FC<ImageAndResultCardProps> = ({
       {/* 1. Header (fixed size) */}
       <div className="flex items-center space-x-4 flex-shrink-0">
         <img
-            src="https://s14.gifyu.com/images/bH2tk.gif"
+            src="https://i.postimg.cc/RC3KX5vf/HD-unnamed-12.webp"
             alt="Profile"
             className="w-20 h-20 rounded-full object-cover border-2 border-white/30"
         />
