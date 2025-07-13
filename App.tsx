@@ -11,12 +11,32 @@ import { SettingsCard } from './components/SettingsCard';
 import { CostumeCard } from './components/CostumeCard';
 import { PinCard } from './components/PinCard';
 import { NotificationContainer } from './components/shared/Notification';
+import { CORRECT_PIN } from './constants';
 
 const CUSTOM_PROMPTS_STORAGE_KEY = 'customUserPrompts';
+const ANIMATION_ENABLED_STORAGE_KEY = 'isAnimationEnabled';
 
 export default function App() {
+  const [isAnimationEnabled, setIsAnimationEnabled] = useState<boolean>(() => {
+    try {
+        const saved = localStorage.getItem(ANIMATION_ENABLED_STORAGE_KEY);
+        return saved ? JSON.parse(saved) : true;
+    } catch {
+        return true;
+    }
+  });
+
   // State for PIN Authentication
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    try {
+        const storedPin = localStorage.getItem('authenticatedPin');
+        // The user is authenticated if the stored PIN matches the current correct PIN.
+        return storedPin === CORRECT_PIN;
+    } catch (error) {
+        console.error("Failed to read authenticated PIN from localStorage", error);
+        return false;
+    }
+  });
 
   // State for Image Analysis Flow
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -64,6 +84,15 @@ export default function App() {
     // Fallback if nothing is saved or there's an error
     return [{ id: 1, title: 'My First Saved Prompt', prompt: 'A futuristic cityscape with flying cars, neon signs, and rainy streets, cinematic lighting, ultra-detailed.' }];
   });
+
+  // Effect to save animation preference to localStorage
+  useEffect(() => {
+    try {
+        localStorage.setItem(ANIMATION_ENABLED_STORAGE_KEY, JSON.stringify(isAnimationEnabled));
+    } catch (error) {
+        console.error("Failed to save animation setting to localStorage", error);
+    }
+  }, [isAnimationEnabled]);
 
   // Effect to save custom prompts to localStorage whenever they change
   useEffect(() => {
@@ -210,8 +239,8 @@ export default function App() {
 
 
   return (
-    <div className="min-h-screen w-full font-sans relative">
-      <BackgroundAnimations />
+    <div className={`min-h-screen w-full font-sans relative ${!isAnimationEnabled ? 'bg-gradient-to-br from-black to-[#071334]' : ''}`}>
+      {isAnimationEnabled && <BackgroundAnimations />}
       <NotificationContainer notifications={notifications} onRemove={removeNotification} />
       
       {!isAuthenticated ? (
@@ -223,6 +252,8 @@ export default function App() {
                 onClose={() => setIsSettingsOpen(false)}
                 apiKeys={apiKeys}
                 setApiKeys={setApiKeys}
+                isAnimationEnabled={isAnimationEnabled}
+                setIsAnimationEnabled={setIsAnimationEnabled}
             />
             <div className="relative z-20 min-h-screen w-full p-4 md:p-8 flex items-center justify-center">
                 <main className="w-full max-w-7xl mx-auto h-[90vh]">
@@ -273,6 +304,7 @@ export default function App() {
                                       history={history} 
                                       isLoading={isGenerating}
                                       onSave={handleSavePromptFromHistory}
+                                      userPrompt={userPrompt}
                                     />
                                 </div>
                                 </div>
