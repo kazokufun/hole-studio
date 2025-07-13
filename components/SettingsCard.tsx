@@ -14,6 +14,8 @@ interface SettingsCardProps {
   onClose: () => void;
   apiKeys: { key1: string; key2: string; key3: string; };
   setApiKeys: (keys: { key1: string; key2: string; key3: string; }) => void;
+  isAnimationEnabled: boolean;
+  setIsAnimationEnabled: (enabled: boolean) => void;
 }
 
 export const SettingsCard: React.FC<SettingsCardProps> = ({
@@ -21,6 +23,8 @@ export const SettingsCard: React.FC<SettingsCardProps> = ({
   onClose,
   apiKeys,
   setApiKeys,
+  isAnimationEnabled,
+  setIsAnimationEnabled,
 }) => {
   const [localKeys, setLocalKeys] = useState(apiKeys);
 
@@ -58,7 +62,33 @@ export const SettingsCard: React.FC<SettingsCardProps> = ({
           <CloseIcon />
         </button>
         
-        <h2 className="text-xl font-bold tracking-wider mb-2">API Key Settings</h2>
+        <h2 className="text-xl font-bold tracking-wider mb-2">Settings</h2>
+        <p className="text-sm text-white/60 mb-6">
+            Manage your API Keys and application preferences.
+        </p>
+
+        <div className="flex items-center justify-between p-4 rounded-lg border-2 border-white/20 bg-black/20">
+          <label htmlFor="animation-toggle-btn" className="font-semibold cursor-pointer">
+            Background Animation
+          </label>
+          <button
+            id="animation-toggle-btn"
+            role="switch"
+            aria-checked={isAnimationEnabled}
+            onClick={() => setIsAnimationEnabled(!isAnimationEnabled)}
+            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black/20 focus:ring-cyan-400 ${
+              isAnimationEnabled ? 'bg-cyan-400' : 'bg-gray-600'
+            }`}
+          >
+            <span
+              className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${
+                isAnimationEnabled ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+
+        <h3 className="text-lg font-bold tracking-wider mt-6 mb-2">API Key Settings</h3>
         <p className="text-sm text-white/60 mb-6">
             Provide up to 3 user API keys. The app will automatically try them in order if one fails (e.g., reaches a rate limit). The default app key will be used as a final fallback.
         </p>
