@@ -1,10 +1,10 @@
 
+
 import React, { useState, useRef, ChangeEvent, KeyboardEvent, ClipboardEvent, useEffect } from 'react';
 import { GlassCard } from './shared/GlassCard';
 import { ButtonAnimations } from './shared/ButtonAnimations';
 import { unlockAudio, playAudio } from '../services/audioService';
-
-const CORRECT_PIN = "332211";
+import { CORRECT_PIN } from '../constants';
 
 interface PinCardProps {
     onSuccess: () => void;
