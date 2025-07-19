@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import type { PromptHistoryEntry } from '../types';
+import type { PromptHistoryEntry, PromptBGOptions } from '../types';
 
 /**
  * A helper function to run a Gemini request with a list of API keys, providing automatic fallback.
@@ -204,3 +204,82 @@ export const generateTagsFromText = async (
         return [];
     }
 }
+
+export const generateMultipleBackgroundPrompts = async (
+    userRequest: string,
+    options: PromptBGOptions,
+    apiKeys: string[],
+): Promise<Pick<PromptHistoryEntry, 'title' | 'prompt'>[]> => {
+    if (!apiKeys || apiKeys.length === 0) {
+      console.error("Error: API key is not provided.");
+      return [];
+    }
+    try {
+        const result = await runRequestWithFallback(apiKeys, async (ai) => {
+            const specialInstruction = options.special ? `Special Consideration: ${options.special}.` : '';
+
+            const fullPrompt = `
+                You are an expert prompt engineer specializing in creating text-to-image prompts for high-quality backgrounds. 
+                Your task is to generate a list of 10 unique and varied background prompts based on the user's request and their stylistic choices.
+                For each prompt, also create a very short, descriptive title (3-5 words max).
+
+                User's core idea: "${userRequest}"
+                
+                Chosen characteristics:
+                - Style: ${options.style}
+                - Type: ${options.type}
+                ${specialInstruction}
+
+                Generate 10 different variations. They should explore different angles, compositions, and interpretations of the core idea while adhering to the chosen characteristics.
+
+                **VERY IMPORTANT RULES TO FOLLOW:**
+                - DO NOT include any specific artist names (e.g., "by Greg Rutkowski").
+                - DO NOT include copyrighted style names (e.g., "in the style of Disney").
+                - DO NOT include any company logos or trademarked brand names.
+                - Focus exclusively on descriptive language that conveys the visual and technical qualities of the desired background image.
+
+                Return your response as a JSON array of objects, where each object has a "title" and a "prompt" key.
+            `;
+
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: fullPrompt,
+                config: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: Type.ARRAY,
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                title: {
+                                    type: Type.STRING,
+                                    description: "A very short, descriptive title for the background prompt (3-5 words max)."
+                                },
+                                prompt: {
+                                    type: Type.STRING,
+                                    description: "A detailed and creative text-to-image prompt for a background."
+                                }
+                            },
+                            required: ["title", "prompt"]
+                        }
+                    },
+                    temperature: 0.8,
+                    topP: 1,
+                    topK: 40,
+                }
+            });
+            
+            const jsonResponse = JSON.parse(response.text);
+            if(Array.isArray(jsonResponse) && jsonResponse.every(item => typeof item === 'object' && item !== null && 'title' in item && 'prompt' in item && typeof item.title === 'string' && typeof item.prompt === 'string')) {
+                return jsonResponse;
+            }
+            console.error("Unexpected JSON response format for background prompts:", jsonResponse);
+            throw new Error("Invalid JSON response format.");
+        });
+        return result;
+
+    } catch (error) {
+        console.error("Error generating multiple background prompts from Gemini after all retries:", error);
+        return [];
+    }
+};
