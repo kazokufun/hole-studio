@@ -9,3 +9,9 @@ export interface NotificationEntry {
   id: number;
   message: string;
 }
+
+export interface PromptBGOptions {
+  style: string;
+  type: string;
+  special: string;
+}
