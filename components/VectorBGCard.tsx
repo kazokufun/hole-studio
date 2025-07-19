@@ -11,29 +11,26 @@ interface VectorBGCardProps {
 
 export const VectorBGCard: React.FC<VectorBGCardProps> = ({ prompt, setPrompt, onGenerate, isLoading }) => {
   return (
-    <GlassCard className="p-6 flex flex-col h-full font-mono text-white/90">
+    <GlassCard className="p-6 flex flex-col h-full font-mono text-white/90 opacity-60 cursor-not-allowed">
       <h3 className="text-sm font-bold tracking-widest mb-1 text-white/70">VECTORBG:</h3>
-      <p className="text-xs text-white/60 mb-2">Write Simple Text Vector</p>
+      <p className="text-xs text-white/60 mb-2">This feature is coming soon.</p>
       <textarea
-        value={prompt}
-        onChange={(e) => setPrompt(e.target.value)}
-        placeholder="e.g., a stylized geometric lion head..."
-        className="flex-grow bg-black/30 rounded-xl p-4 text-sm w-full focus:outline-none focus:ring-2 focus:ring-fuchsia-500 transition-all duration-300 resize-none"
+        value=""
+        readOnly
+        disabled
+        placeholder="Vector background generation will be available in a future update."
+        className="flex-grow bg-black/30 rounded-xl p-4 text-sm w-full focus:outline-none resize-none cursor-not-allowed"
       />
       <div className="flex justify-between items-center mt-4">
         <div className="flex items-center space-x-2">
-           <div className={`w-3 h-3 rounded-full transition-colors duration-300 ${isLoading ? 'bg-yellow-400 animate-pulse' : (prompt.trim() ? 'bg-green-400' : 'bg-gray-500')}`}></div>
-           <span className="text-xs tracking-wider">{isLoading ? 'BUSY' : (prompt.trim() ? 'READY' : 'IDLE')}</span>
+           <div className={`w-3 h-3 rounded-full bg-gray-500`}></div>
+           <span className="text-xs tracking-wider">DISABLED</span>
         </div>
         <ButtonAnimations
-          onClick={onGenerate}
-          disabled={isLoading || !prompt.trim()}
+          onClick={() => {}}
+          disabled={true}
         >
-          {isLoading ? (
-            <span>DESIGNING...</span>
-          ) : (
-            <span>DESIGN VT</span>
-          )}
+          <span>DESIGN VT</span>
         </ButtonAnimations>
       </div>
     </GlassCard>
