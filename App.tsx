@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import type { PromptHistoryEntry, NotificationEntry } from './types';
-import { analyzeImage, generatePromptsFromText, generateTagsFromText } from './services/geminiService';
+import type { PromptHistoryEntry, NotificationEntry, PromptBGOptions } from './types';
+import { analyzeImage, generatePromptsFromText, generateTagsFromText, generateMultipleBackgroundPrompts } from './services/geminiService';
 import { playAudio } from './services/audioService';
 import { ImageAndResultCard } from './components/ImageAndResultCard';
 import { PromptInputCard } from './components/PromptInputCard';
@@ -12,6 +12,9 @@ import { CostumeCard } from './components/CostumeCard';
 import { PinCard } from './components/PinCard';
 import { NotificationContainer } from './components/shared/Notification';
 import { CORRECT_PIN } from './constants';
+import { PromptBGCard } from './components/PromptBGCard';
+import { VectorBGCard } from './components/VectorBGCard';
+import { PromptBGModal } from './components/PromptBGModal';
 
 const CUSTOM_PROMPTS_STORAGE_KEY = 'customUserPrompts';
 const ANIMATION_ENABLED_STORAGE_KEY = 'isAnimationEnabled';
@@ -54,6 +57,13 @@ export default function App() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isTagLoading, setIsTagLoading] = useState<boolean>(false);
   
+  // State for new cards
+  const [promptBG, setPromptBG] = useState<string>('');
+  const [isGeneratingBG, setIsGeneratingBG] = useState<boolean>(false);
+  const [isPromptBGModalOpen, setIsPromptBGModalOpen] = useState(false);
+  const [vectorBG, setVectorBG] = useState<string>('');
+  const [isGeneratingVT, setIsGeneratingVT] = useState<boolean>(false);
+
   // State for Settings Modal
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
@@ -117,10 +127,6 @@ export default function App() {
     setNotifications(prev => [newNotification, ...prev].slice(0, 5)); // Add to front, limit to 5 active notifications
   }, []);
 
-  /**
-   * Compiles a list of available API keys to be used for requests.
-   * @returns An array of non-empty API key strings.
-   */
   const getAvailableApiKeys = useCallback(() => {
     const userKeys = [apiKeys.key1, apiKeys.key2, apiKeys.key3].filter(key => !!key);
     const defaultKey = process.env.API_KEY || '';
@@ -130,11 +136,52 @@ export default function App() {
   const checkApiKey = useCallback(() => {
     const keys = getAvailableApiKeys();
     if (keys.length === 0) {
-        alert("No API key is configured. Please set at least one API key in the settings.");
+        addNotification("Error: No API key configured. Please set one in settings.");
         return false;
     }
     return true;
-  }, [getAvailableApiKeys]);
+  }, [getAvailableApiKeys, addNotification]);
+
+  const handleOpenPromptBGModal = useCallback(() => {
+    if (!promptBG.trim()) return;
+    playAudio('/tombol.mp3');
+    setIsPromptBGModalOpen(true);
+  }, [promptBG]);
+
+  const handleGenerateBG = useCallback(async (options: PromptBGOptions) => {
+    if (!promptBG.trim() || !checkApiKey()) return;
+
+    setIsPromptBGModalOpen(false);
+    setIsGeneratingBG(true);
+    setIsGenerating(true); // Also set the main table loader
+    setUserPrompt(promptBG); // Set user prompt for download consistency
+
+    const availableKeys = getAvailableApiKeys();
+    const generatedPrompts = await generateMultipleBackgroundPrompts(promptBG, options, availableKeys);
+
+    if (generatedPrompts.length > 0) {
+        const newEntries: PromptHistoryEntry[] = generatedPrompts.map((p, index) => ({
+            id: Date.now() + index,
+            title: p.title,
+            prompt: p.prompt,
+        }));
+        setHistory(newEntries);
+        setHasGenerated(true);
+        addNotification(`Generated ${newEntries.length} new background prompts.`);
+        playAudio('/notifikasi.mp3');
+        setPromptBG(''); // Clear the input field
+    } else {
+        addNotification("Error: Could not generate background prompts.");
+    }
+
+    setIsGeneratingBG(false);
+    setIsGenerating(false);
+  }, [promptBG, checkApiKey, getAvailableApiKeys, addNotification, setUserPrompt, setHistory, setHasGenerated, setPromptBG]);
+
+  const handleGenerateVT = useCallback(() => {
+    if (!vectorBG.trim()) return;
+    addNotification(`"Design VT" feature is not yet implemented.`);
+  }, [vectorBG, addNotification]);
 
   // Handler for Image Analysis
   const handleAnalyzeImage = async () => {
@@ -255,6 +302,11 @@ export default function App() {
                 isAnimationEnabled={isAnimationEnabled}
                 setIsAnimationEnabled={setIsAnimationEnabled}
             />
+            <PromptBGModal
+                isOpen={isPromptBGModalOpen}
+                onClose={() => setIsPromptBGModalOpen(false)}
+                onSubmit={handleGenerateBG}
+            />
             <div className="relative z-20 min-h-screen w-full p-4 md:p-8 flex items-center justify-center">
                 <main className="w-full max-w-7xl mx-auto h-[90vh]">
                     <div className="bg-black/30 p-8 rounded-3xl shadow-2xl h-full">
@@ -289,6 +341,18 @@ export default function App() {
                                     recommendedTags={recommendedTags}
                                     selectedTags={selectedTags}
                                     onTagSelect={handleTagSelect}
+                                />
+                                <PromptBGCard
+                                    prompt={promptBG}
+                                    setPrompt={setPromptBG}
+                                    onGenerate={handleOpenPromptBGModal}
+                                    isLoading={isGeneratingBG}
+                                />
+                                <VectorBGCard
+                                    prompt={vectorBG}
+                                    setPrompt={setVectorBG}
+                                    onGenerate={handleGenerateVT}
+                                    isLoading={isGeneratingVT}
                                 />
                                 </div>
                                 <div className="flex-grow min-h-0 flex flex-col gap-6">
