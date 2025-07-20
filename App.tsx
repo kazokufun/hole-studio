@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import type { PromptHistoryEntry, NotificationEntry, PromptBGOptions } from './types';
-import { analyzeImage, generatePromptsFromText, generateTagsFromText, generateMultipleBackgroundPrompts } from './services/geminiService';
+import type { PromptHistoryEntry, NotificationEntry, PromptBGOptions, VectorBGOptions } from './types';
+import { analyzeImage, generatePromptsFromText, generateTagsFromText, generateMultipleBackgroundPrompts, generateVectorPrompts } from './services/geminiService';
 import { playAudio } from './services/audioService';
 import { ImageAndResultCard } from './components/ImageAndResultCard';
 import { PromptInputCard } from './components/PromptInputCard';
@@ -15,6 +15,8 @@ import { CORRECT_PIN } from './constants';
 import { PromptBGCard } from './components/PromptBGCard';
 import { VectorBGCard } from './components/VectorBGCard';
 import { PromptBGModal } from './components/PromptBGModal';
+import { VectorBGModal } from './components/VectorBGModal';
+
 
 const CUSTOM_PROMPTS_STORAGE_KEY = 'customUserPrompts';
 const ANIMATION_ENABLED_STORAGE_KEY = 'isAnimationEnabled';
@@ -63,6 +65,8 @@ export default function App() {
   const [isPromptBGModalOpen, setIsPromptBGModalOpen] = useState(false);
   const [vectorBG, setVectorBG] = useState<string>('');
   const [isGeneratingVT, setIsGeneratingVT] = useState<boolean>(false);
+  const [isVectorBGModalOpen, setIsVectorBGModalOpen] = useState(false);
+
 
   // State for Settings Modal
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -178,10 +182,42 @@ export default function App() {
     setIsGenerating(false);
   }, [promptBG, checkApiKey, getAvailableApiKeys, addNotification, setUserPrompt, setHistory, setHasGenerated, setPromptBG]);
 
-  const handleGenerateVT = useCallback(() => {
+  const handleOpenVectorBGModal = useCallback(() => {
     if (!vectorBG.trim()) return;
-    addNotification(`"Design VT" feature is not yet implemented.`);
-  }, [vectorBG, addNotification]);
+    playAudio('/tombol.mp3');
+    setIsVectorBGModalOpen(true);
+  }, [vectorBG]);
+
+  const handleGenerateVector = useCallback(async (options: VectorBGOptions) => {
+    if (!vectorBG.trim() || !checkApiKey()) return;
+
+    setIsVectorBGModalOpen(false);
+    setIsGeneratingVT(true);
+    setIsGenerating(true); // Also set the main table loader
+    setUserPrompt(vectorBG); // Set user prompt for download consistency
+
+    const availableKeys = getAvailableApiKeys();
+    const generatedPrompts = await generateVectorPrompts(vectorBG, options, availableKeys);
+
+    if (generatedPrompts.length > 0) {
+        const newEntries: PromptHistoryEntry[] = generatedPrompts.map((p, index) => ({
+            id: Date.now() + index,
+            title: p.title,
+            prompt: p.prompt,
+        }));
+        setHistory(newEntries);
+        setHasGenerated(true);
+        addNotification(`Generated ${newEntries.length} new vector prompts.`);
+        playAudio('/notifikasi.mp3');
+        setVectorBG(''); // Clear the input field
+    } else {
+        addNotification("Error: Could not generate vector prompts.");
+    }
+
+    setIsGeneratingVT(false);
+    setIsGenerating(false);
+  }, [vectorBG, checkApiKey, getAvailableApiKeys, addNotification, setUserPrompt, setHistory, setHasGenerated, setVectorBG]);
+
 
   // Handler for Image Analysis
   const handleAnalyzeImage = async () => {
@@ -307,6 +343,11 @@ export default function App() {
                 onClose={() => setIsPromptBGModalOpen(false)}
                 onSubmit={handleGenerateBG}
             />
+            <VectorBGModal
+                isOpen={isVectorBGModalOpen}
+                onClose={() => setIsVectorBGModalOpen(false)}
+                onSubmit={handleGenerateVector}
+            />
             <div className="relative z-20 min-h-screen w-full p-4 md:p-8 flex items-center justify-center">
                 <main className="w-full max-w-7xl mx-auto h-[90vh]">
                     <div className="bg-black/30 p-8 rounded-3xl shadow-2xl h-full">
@@ -351,7 +392,7 @@ export default function App() {
                                 <VectorBGCard
                                     prompt={vectorBG}
                                     setPrompt={setVectorBG}
-                                    onGenerate={handleGenerateVT}
+                                    onGenerate={handleOpenVectorBGModal}
                                     isLoading={isGeneratingVT}
                                 />
                                 </div>
