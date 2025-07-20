@@ -15,3 +15,9 @@ export interface PromptBGOptions {
   type: string;
   special: string;
 }
+
+export interface VectorBGOptions {
+  design: string;
+  iconDesign: string;
+  iconType: string;
+}
