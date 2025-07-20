@@ -1,5 +1,6 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
-import type { PromptHistoryEntry, PromptBGOptions } from '../types';
+import type { PromptHistoryEntry, PromptBGOptions, VectorBGOptions } from '../types';
 
 /**
  * A helper function to run a Gemini request with a list of API keys, providing automatic fallback.
@@ -280,6 +281,101 @@ export const generateMultipleBackgroundPrompts = async (
 
     } catch (error) {
         console.error("Error generating multiple background prompts from Gemini after all retries:", error);
+        return [];
+    }
+};
+
+export const generateVectorPrompts = async (
+    userRequest: string,
+    options: VectorBGOptions,
+    apiKeys: string[],
+): Promise<Pick<PromptHistoryEntry, 'title' | 'prompt'>[]> => {
+    if (!apiKeys || apiKeys.length === 0) {
+      console.error("Error: API key is not provided.");
+      return [];
+    }
+    try {
+        const result = await runRequestWithFallback(apiKeys, async (ai) => {
+            const promptInstructions = [];
+            let collectionInstruction = '';
+            
+            if (options.design) {
+                promptInstructions.push(`The primary focus is on vector **${options.design}** design.`);
+            }
+            if (options.iconDesign) {
+                promptInstructions.push(`If creating icons, use the **${options.iconDesign}** style.`);
+            }
+            if (options.iconType) {
+                 promptInstructions.push(`The output should be structured for an icon set of type: **${options.iconType}**.`);
+                 if (options.iconType === '3x3 grid') {
+                    collectionInstruction = `The user specifically requested a **3x3 grid collection**. Each prompt must describe a coherent set of exactly **9 icons** designed to be displayed together in a 3-row, 3-column grid. The prompt must explicitly ask for a "collection of 9 icons in a 3x3 grid".`;
+                 } else if (options.iconType === '3x4 grid') {
+                    collectionInstruction = `The user specifically requested a **3x4 grid collection**. Each prompt must describe a coherent set of exactly **12 icons** designed to be displayed together in a 3-row, 4-column grid. The prompt must explicitly ask for a "collection of 12 icons in a 3x4 grid".`;
+                 }
+            }
+            const instructions = promptInstructions.length > 0 ? promptInstructions.join(' ') : 'Generate general vector art prompts.';
+
+            const fullPrompt = `
+                You are an expert prompt engineer specializing in creating prompts for vector graphic generation AI models.
+                Your task is to generate a list of 10 unique, detailed, and creative vector art prompts.
+                For each prompt, also create a very short, descriptive title (3-5 words max).
+
+                User's core idea: "${userRequest}"
+                
+                Chosen characteristics:
+                ${instructions}
+                
+                ${collectionInstruction ? `\n**VERY IMPORTANT SPECIAL INSTRUCTION:**\n${collectionInstruction}\n` : ''}
+
+                **GENERAL RULES TO FOLLOW:**
+                - Focus on creating prompts for **vector graphics**. This means clean lines, flat colors, gradients, and shapes. Avoid photorealistic details.
+                - DO NOT include any specific artist names (e.g., "by Artgerm").
+                - DO NOT include copyrighted logos, characters, or style names (e.g., "in the style of Disney", "Nike logo").
+                - DO NOT include any company logos or trademarked brand names.
+                - Focus exclusively on descriptive language that conveys the visual and technical qualities of the desired vector image.
+
+                Return your response as a JSON array of objects, where each object has a "title" and a "prompt" key.
+            `;
+
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: fullPrompt,
+                config: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: Type.ARRAY,
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                title: {
+                                    type: Type.STRING,
+                                    description: "A very short, descriptive title for the vector prompt (3-5 words max)."
+                                },
+                                prompt: {
+                                    type: Type.STRING,
+                                    description: "A detailed and creative text-to-image prompt for a vector graphic or a collection of graphics."
+                                }
+                            },
+                            required: ["title", "prompt"]
+                        }
+                    },
+                    temperature: 0.7,
+                    topP: 1,
+                    topK: 40,
+                }
+            });
+            
+            const jsonResponse = JSON.parse(response.text);
+            if(Array.isArray(jsonResponse) && jsonResponse.every(item => typeof item === 'object' && item !== null && 'title' in item && 'prompt' in item && typeof item.title === 'string' && typeof item.prompt === 'string')) {
+                return jsonResponse;
+            }
+            console.error("Unexpected JSON response format for vector prompts:", jsonResponse);
+            throw new Error("Invalid JSON response format.");
+        });
+        return result;
+
+    } catch (error) {
+        console.error("Error generating vector prompts from Gemini after all retries:", error);
         return [];
     }
 };
