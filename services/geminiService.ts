@@ -1,6 +1,7 @@
 
+
 import { GoogleGenAI, Type } from "@google/genai";
-import type { PromptHistoryEntry, PromptBGOptions, VectorBGOptions } from '../types';
+import type { PromptHistoryEntry, PromptBGOptions, VectorBGOptions, VariationOptions } from '../types';
 
 /**
  * A helper function to run a Gemini request with a list of API keys, providing automatic fallback.
@@ -66,12 +67,13 @@ export const analyzeImage = async (
     try {
         const result = await runRequestWithFallback(apiKeys, async (ai) => {
             const imagePart = await fileToGenerativePart(imageFile);
-            const fullPrompt = `Analyze the provided image and generate a structured description based on the following template. Provide the response in Indonesian.
+            const fullPrompt = `Analyze the provided image and generate a structured description.
+Follow this template exactly. The main language for the description MUST be Indonesian, but the "Prompt Gambar" section MUST be in English.
 
-Nama Gambar: [A creative and fitting title for the image]
-Gaya Gambar: [Identify the artistic style, e.g., Photorealistic, Anime, Watercolor, 3D Render, etc.]
-Detail Objek: [List the main objects and key details present in the image]
-Prompt Gambar: [A detailed text-to-image prompt that could be used to generate a similar image, including subject, action, setting, and style.]`;
+Nama Gambar: [Judul yang kreatif dan pas untuk gambar dalam Bahasa Indonesia]
+Gaya Gambar: [Identifikasi gaya artistik dalam Bahasa Indonesia, cth., Fotorealistik, Anime, Cat Air, Render 3D, dll.]
+Detail Objek: [Daftar objek utama dan detail penting yang ada di gambar dalam Bahasa Indonesia]
+Prompt Gambar: [A detailed, high-quality text-to-image prompt in ENGLISH ONLY that could be used to generate a similar image. This part must be in English.]`;
 
             const response = await ai.models.generateContent({
                 model: 'gemini-2.5-flash',
@@ -155,6 +157,161 @@ export const generatePromptsFromText = async (
 
     } catch (error) {
         console.error("Error generating prompts from Gemini after all retries:", error);
+        return [];
+    }
+};
+
+export const generatePhotographyPrompts = async (
+    userRequest: string,
+    theme: string,
+    apiKeys: string[],
+): Promise<Pick<PromptHistoryEntry, 'title' | 'prompt'>[]> => {
+    if (!apiKeys || apiKeys.length === 0) {
+      console.error("Error: API key is not provided.");
+      return [];
+    }
+    try {
+        const result = await runRequestWithFallback(apiKeys, async (ai) => {
+            const fullPrompt = `
+                You are a world-class photography prompt engineer for advanced text-to-image AI models. Your specialty is creating prompts that emulate professional photography.
+                Based on the user's request and the selected theme, generate a list of 10 unique, highly-detailed, and creative image generation prompts.
+                For each prompt, also create a short, descriptive title (5-7 words max).
+
+                User Request: "${userRequest}"
+                Photography Theme: "${theme}"
+
+                **VERY IMPORTANT INSTRUCTIONS:**
+                - Each prompt must be extremely detailed and structured for a professional photographic look.
+                - Include specific camera settings (e.g., aperture like f/1.8, shutter speed like 1/1000s, ISO like 100).
+                - Specify lens types (e.g., 85mm prime lens, 24-70mm zoom, macro lens).
+                - Describe the lighting in detail (e.g., golden hour, soft diffused light, dramatic backlighting, studio three-point lighting).
+                - Mention composition techniques (e.g., rule of thirds, leading lines, depth of field).
+                - The final output should feel like a recipe for a professional photographer to capture a stunning image.
+                - DO NOT include artist names.
+
+                Return your response as a JSON array of objects, where each object has a "title" and a "prompt" key.
+            `;
+
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: fullPrompt,
+                config: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: Type.ARRAY,
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                title: {
+                                    type: Type.STRING,
+                                    description: "A short, descriptive title for the photography prompt (5-7 words max)."
+                                },
+                                prompt: {
+                                    type: Type.STRING,
+                                    description: "A detailed and creative text-to-image prompt for professional photography, including camera settings and lighting."
+                                }
+                            },
+                            required: ["title", "prompt"]
+                        }
+                    },
+                    temperature: 0.8,
+                }
+            });
+            
+            const jsonResponse = JSON.parse(response.text);
+            if(Array.isArray(jsonResponse) && jsonResponse.every(item => typeof item === 'object' && item !== null && 'title' in item && 'prompt' in item && typeof item.title === 'string' && typeof item.prompt === 'string')) {
+                return jsonResponse;
+            }
+            console.error("Unexpected JSON response format for photography prompts:", jsonResponse);
+            throw new Error("Invalid JSON response format.");
+        });
+        return result;
+
+    } catch (error) {
+        console.error("Error generating photography prompts from Gemini after all retries:", error);
+        return [];
+    }
+};
+
+export const generatePromptVariations = async (
+    basePrompt: string,
+    options: VariationOptions,
+    apiKeys: string[],
+): Promise<Pick<PromptHistoryEntry, 'title' | 'prompt'>[]> => {
+    if (!apiKeys || apiKeys.length === 0) {
+      console.error("Error: API key is not provided.");
+      return [];
+    }
+
+    // Build dynamic instructions based on user's choices
+    const modifications: string[] = [];
+    if (options.object) modifications.push('the core subject/object');
+    if (options.pattern) modifications.push('patterns and textures');
+    if (options.shape) modifications.push('the overall shapes and forms');
+    if (options.color) modifications.push('the color palette and lighting');
+    
+    let variationInstructions = '';
+    if (modifications.length > 0) {
+        variationInstructions = `Your main goal is to creatively change **only** the following aspects: **${modifications.join(', ')}**.`;
+    } else {
+        variationInstructions = 'Your main goal is to create imaginative and diverse variations of the base prompt.';
+    }
+
+    try {
+        const result = await runRequestWithFallback(apiKeys, async (ai) => {
+            const fullPrompt = `
+                You are a creative assistant for AI image generation. Your task is to take a base prompt and generate 10 unique variations based on specific instructions.
+                For each variation, create a short, descriptive title (5-7 words max).
+
+                **Base Prompt:**
+                "${basePrompt}"
+
+                **VERY IMPORTANT INSTRUCTIONS:**
+                1.  **Maintain the Artistic Style:** The core artistic style of the base prompt (e.g., 'photorealistic', 'anime', 'watercolor', '3D render') MUST be preserved in all variations. This is the most critical rule.
+                2.  **Follow Variation Rules:** ${variationInstructions} All other aspects of the prompt not mentioned for modification should remain as consistent as possible with the base prompt.
+                3.  **Be Creative:** Within the given constraints, be highly creative and imaginative.
+                4.  **No Forbidden Content:** Do not include artist names, copyrighted material, or trademarks.
+
+                Return your response as a JSON array of objects, where each object has a "title" and a "prompt" key.
+            `;
+
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: fullPrompt,
+                config: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: Type.ARRAY,
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                title: {
+                                    type: Type.STRING,
+                                    description: "A short, descriptive title for the prompt variation (5-7 words max)."
+                                },
+                                prompt: {
+                                    type: Type.STRING,
+                                    description: "A detailed and creative text-to-image prompt variation."
+                                }
+                            },
+                            required: ["title", "prompt"]
+                        }
+                    },
+                    temperature: 0.9,
+                }
+            });
+
+            const jsonResponse = JSON.parse(response.text);
+            if(Array.isArray(jsonResponse) && jsonResponse.every(item => typeof item === 'object' && item !== null && 'title' in item && 'prompt' in item && typeof item.title === 'string' && typeof item.prompt === 'string')) {
+                return jsonResponse;
+            }
+            console.error("Unexpected JSON response format for prompt variations:", jsonResponse);
+            throw new Error("Invalid JSON response format.");
+        });
+        return result;
+
+    } catch (error) {
+        console.error("Error generating prompt variations from Gemini after all retries:", error);
         return [];
     }
 };
