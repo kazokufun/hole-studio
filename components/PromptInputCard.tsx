@@ -13,11 +13,11 @@ interface PromptInputCardProps {
 export const PromptInputCard: React.FC<PromptInputCardProps> = ({ prompt, setPrompt, onGenerate, isLoading, hasGenerated }) => {
   return (
     <GlassCard className="p-6 flex flex-col h-full font-mono text-white/90">
-      <h3 className="text-sm font-bold tracking-widest mb-2 text-white/70">WRITE PROMPT HERE:</h3>
+      <h3 className="text-sm font-bold tracking-widest mb-2 text-white/70">PHOTO CONCEPT:</h3>
       <textarea
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
-        placeholder="Describe the image you want to create. E.g., 'a majestic lion on a cosmic throne'..."
+        placeholder="Describe a photo concept. E.g., 'a lone hiker watching the aurora borealis'..."
         className="flex-grow bg-black/30 rounded-xl p-4 text-sm w-full focus:outline-none focus:ring-2 focus:ring-fuchsia-500 transition-all duration-300 resize-none"
       />
       <div className="flex justify-between items-center mt-4">
