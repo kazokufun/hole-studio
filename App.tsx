@@ -1,10 +1,12 @@
+
+
 import React, { useState, useCallback, useEffect } from 'react';
-import type { PromptHistoryEntry, NotificationEntry, PromptBGOptions, VectorBGOptions } from './types';
-import { analyzeImage, generatePromptsFromText, generateTagsFromText, generateMultipleBackgroundPrompts, generateVectorPrompts } from './services/geminiService';
+import type { PromptHistoryEntry, NotificationEntry, PromptBGOptions, VectorBGOptions, VariationOptions } from './types';
+import { analyzeImage, generateMultipleBackgroundPrompts, generateVectorPrompts, generatePhotographyPrompts, generatePromptVariations } from './services/geminiService';
 import { playAudio, setSoundEnabled } from './services/audioService';
 import { ImageAndResultCard } from './components/ImageAndResultCard';
 import { PromptInputCard } from './components/PromptInputCard';
-import { PromptRulesCard } from './components/PromptRulesCard';
+import { PromptEnhancerCard } from './components/PromptEnhancerCard';
 import { PromptHistoryTable } from './components/PromptHistoryTable';
 import BackgroundAnimations from './components/BackgroundAnimations';
 import { SettingsCard } from './components/SettingsCard';
@@ -16,6 +18,8 @@ import { PromptBGCard } from './components/PromptBGCard';
 import { VectorBGCard } from './components/VectorBGCard';
 import { PromptBGModal } from './components/PromptBGModal';
 import { VectorBGModal } from './components/VectorBGModal';
+import { PhotographyThemeModal } from './components/PhotographyThemeModal';
+import { VariationOptionsModal } from './components/VariationOptionsModal';
 
 
 const CUSTOM_PROMPTS_STORAGE_KEY = 'customUserPrompts';
@@ -63,11 +67,12 @@ export default function App() {
   const [history, setHistory] = useState<PromptHistoryEntry[]>([]);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [hasGenerated, setHasGenerated] = useState<boolean>(false);
+  const [tableContextPrompt, setTableContextPrompt] = useState<string>(''); // New state for table header/download context
 
-  // State for Tag Generation
-  const [recommendedTags, setRecommendedTags] = useState<string[]>([]);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [isTagLoading, setIsTagLoading] = useState<boolean>(false);
+  // State for Prompt Enhancer
+  const [enhancerPrompt, setEnhancerPrompt] = useState<string>('');
+  const [isCreatingVariations, setIsCreatingVariations] = useState<boolean>(false);
+  const [isVariationModalOpen, setIsVariationModalOpen] = useState(false);
   
   // State for new cards
   const [promptBG, setPromptBG] = useState<string>('');
@@ -76,6 +81,7 @@ export default function App() {
   const [vectorBG, setVectorBG] = useState<string>('');
   const [isGeneratingVT, setIsGeneratingVT] = useState<boolean>(false);
   const [isVectorBGModalOpen, setIsVectorBGModalOpen] = useState(false);
+  const [isPhotographyThemeModalOpen, setIsPhotographyThemeModalOpen] = useState(false);
 
 
   // State for Settings Modal
@@ -183,7 +189,7 @@ export default function App() {
     setIsPromptBGModalOpen(false);
     setIsGeneratingBG(true);
     setIsGenerating(true); // Also set the main table loader
-    setUserPrompt(promptBG); // Set user prompt for download consistency
+    setTableContextPrompt(promptBG); // Set prompt context for the history table
 
     const availableKeys = getAvailableApiKeys();
     const generatedPrompts = await generateMultipleBackgroundPrompts(promptBG, options, availableKeys);
@@ -195,7 +201,6 @@ export default function App() {
             prompt: p.prompt,
         }));
         setHistory(newEntries);
-        setHasGenerated(true);
         addNotification(`Generated ${newEntries.length} new background prompts.`);
         playAudio('/notifikasi.mp3');
         setPromptBG(''); // Clear the input field
@@ -205,7 +210,7 @@ export default function App() {
 
     setIsGeneratingBG(false);
     setIsGenerating(false);
-  }, [promptBG, checkApiKey, getAvailableApiKeys, addNotification, setUserPrompt, setHistory, setHasGenerated, setPromptBG]);
+  }, [promptBG, checkApiKey, getAvailableApiKeys, addNotification, setHistory, setPromptBG, setTableContextPrompt]);
 
   const handleOpenVectorBGModal = useCallback(() => {
     if (!vectorBG.trim()) return;
@@ -219,7 +224,7 @@ export default function App() {
     setIsVectorBGModalOpen(false);
     setIsGeneratingVT(true);
     setIsGenerating(true); // Also set the main table loader
-    setUserPrompt(vectorBG); // Set user prompt for download consistency
+    setTableContextPrompt(vectorBG); // Set prompt context for the history table
 
     const availableKeys = getAvailableApiKeys();
     const generatedPrompts = await generateVectorPrompts(vectorBG, options, availableKeys);
@@ -231,7 +236,6 @@ export default function App() {
             prompt: p.prompt,
         }));
         setHistory(newEntries);
-        setHasGenerated(true);
         addNotification(`Generated ${newEntries.length} new vector prompts.`);
         playAudio('/notifikasi.mp3');
         setVectorBG(''); // Clear the input field
@@ -241,9 +245,15 @@ export default function App() {
 
     setIsGeneratingVT(false);
     setIsGenerating(false);
-  }, [vectorBG, checkApiKey, getAvailableApiKeys, addNotification, setUserPrompt, setHistory, setHasGenerated, setVectorBG]);
+  }, [vectorBG, checkApiKey, getAvailableApiKeys, addNotification, setHistory, setVectorBG, setTableContextPrompt]);
 
 
+  const handleImageUploadAndReset = (file: File) => {
+      setImageFile(file);
+      setAnalysisResult(""); // Clear old analysis
+      setEnhancerPrompt(""); // Also clear the enhancer to avoid stale prompts
+  };
+  
   // Handler for Image Analysis
   const handleAnalyzeImage = async () => {
     if (!imageFile || !checkApiKey()) return;
@@ -257,48 +267,76 @@ export default function App() {
     if (!result.startsWith("Error:")) {
       addNotification("Image analysis complete!");
       playAudio('/notifikasi.mp3');
+      
+      const promptMarker = "Prompt Gambar:";
+      const promptIndex = result.indexOf(promptMarker);
+      if (promptIndex !== -1) {
+        const extractedPrompt = result.substring(promptIndex + promptMarker.length).trim();
+        setEnhancerPrompt(extractedPrompt);
+        addNotification("Prompt copied to Enhancer card.");
+      } else {
+        addNotification("Could not find a prompt in the analysis result.");
+      }
     }
   };
 
-  // Handlers for Tag Generation and Selection
-  const handleGenerateTags = async () => {
-    if (!userPrompt.trim() || !checkApiKey()) return;
-    const availableKeys = getAvailableApiKeys();
-    setIsTagLoading(true);
-    const tags = await generateTagsFromText(userPrompt, availableKeys);
-    setRecommendedTags(tags);
-    setIsTagLoading(false);
-  };
-
-  const handleTagSelect = useCallback((tag: string) => {
-    setSelectedTags(prev => {
-        const isSelected = prev.includes(tag);
-        if(isSelected) {
-            return prev.filter(t => t !== tag);
-        } else {
-            if(prev.length < 3) {
-                return [...prev, tag];
-            }
-            return prev; // Limit to 3 tags
-        }
-    });
-  }, []);
-
   const handlePromptChange = (newPrompt: string) => {
     setUserPrompt(newPrompt);
-    setRecommendedTags([]);
-    setSelectedTags([]);
     setHasGenerated(false);
   };
 
+  const handleOpenVariationModal = useCallback(() => {
+    if (!enhancerPrompt.trim()) return;
+    playAudio('/tombol.mp3');
+    setIsVariationModalOpen(true);
+  }, [enhancerPrompt]);
 
-  // Handler for Text-to-Prompts Generation
-  const handleGeneratePrompts = async () => {
+
+  const handleGenerateVariations = useCallback(async (options: VariationOptions) => {
+    if (!enhancerPrompt.trim() || !checkApiKey()) return;
+    
+    setIsVariationModalOpen(false);
+    setIsCreatingVariations(true);
+    setIsGenerating(true); // Also set the main table loader
+    setTableContextPrompt(enhancerPrompt); // Set prompt context for the history table
+
+    const availableKeys = getAvailableApiKeys();
+    const generatedPrompts = await generatePromptVariations(enhancerPrompt, options, availableKeys);
+
+    if (generatedPrompts.length > 0) {
+        const newEntries: PromptHistoryEntry[] = generatedPrompts.map((p, index) => ({
+            id: Date.now() + index,
+            title: p.title,
+            prompt: p.prompt,
+        }));
+        setHistory(newEntries);
+        addNotification(`Generated ${newEntries.length} new prompt variations.`);
+        playAudio('/notifikasi.mp3');
+    } else {
+        addNotification("Error: Could not generate prompt variations.");
+    }
+
+    setIsCreatingVariations(false);
+    setIsGenerating(false);
+  }, [enhancerPrompt, checkApiKey, getAvailableApiKeys, addNotification, setHistory, setTableContextPrompt]);
+
+
+  // Handler for Photography Prompts
+  const handleOpenPhotographyThemeModal = useCallback(() => {
+    if (!userPrompt.trim()) return;
+    playAudio('/tombol.mp3');
+    setIsPhotographyThemeModalOpen(true);
+  }, [userPrompt]);
+
+  const handleGeneratePhotographyPrompts = useCallback(async (theme: string) => {
     if (!userPrompt.trim() || !checkApiKey()) return;
+
+    setIsPhotographyThemeModalOpen(false);
+    setIsGenerating(true);
+    setTableContextPrompt(userPrompt); // Set prompt context for the history table
     const availableKeys = getAvailableApiKeys();
     
-    setIsGenerating(true);
-    const generatedPrompts = await generatePromptsFromText(userPrompt, selectedTags, availableKeys);
+    const generatedPrompts = await generatePhotographyPrompts(userPrompt, theme, availableKeys);
     
     if (generatedPrompts.length > 0) {
         const newEntries: PromptHistoryEntry[] = generatedPrompts.map((p, index) => ({
@@ -308,14 +346,14 @@ export default function App() {
         }));
         setHistory(newEntries);
         setHasGenerated(true);
-        addNotification(`Generated ${newEntries.length} new prompts.`);
+        addNotification(`Generated ${newEntries.length} new photography prompts.`);
         playAudio('/notifikasi.mp3');
     } else {
-        alert("Sorry, could not generate prompts. Please try a different request.");
+        addNotification("Error: Could not generate photography prompts.");
     }
     
     setIsGenerating(false);
-  };
+  }, [userPrompt, checkApiKey, getAvailableApiKeys, addNotification, setHistory, setHasGenerated, setTableContextPrompt]);
 
   // Handler for saving a prompt from the history table to the custom list
   const handleSavePromptFromHistory = useCallback((data: { title: string; prompt: string }) => {
@@ -375,6 +413,16 @@ export default function App() {
                 onClose={() => setIsVectorBGModalOpen(false)}
                 onSubmit={handleGenerateVector}
             />
+            <PhotographyThemeModal
+                isOpen={isPhotographyThemeModalOpen}
+                onClose={() => setIsPhotographyThemeModalOpen(false)}
+                onSubmit={handleGeneratePhotographyPrompts}
+            />
+            <VariationOptionsModal
+                isOpen={isVariationModalOpen}
+                onClose={() => setIsVariationModalOpen(false)}
+                onSubmit={handleGenerateVariations}
+            />
             <div className="relative z-20 min-h-screen w-full p-4 md:p-8 flex items-center justify-center">
                 <main className="w-full max-w-7xl mx-auto h-[90vh]">
                     <div className="bg-black/30 p-8 rounded-3xl shadow-2xl h-full">
@@ -383,7 +431,7 @@ export default function App() {
                             {/* Left Column */}
                             <div className="lg:col-span-1 h-full">
                                 <ImageAndResultCard 
-                                    onImageUpload={setImageFile} 
+                                    onImageUpload={handleImageUploadAndReset} 
                                     resultPrompt={analysisResult}
                                     isAnalyzing={isAnalyzing}
                                     onAnalyze={handleAnalyzeImage}
@@ -398,17 +446,15 @@ export default function App() {
                                 <PromptInputCard 
                                     prompt={userPrompt}
                                     setPrompt={handlePromptChange}
-                                    onGenerate={handleGeneratePrompts}
+                                    onGenerate={handleOpenPhotographyThemeModal}
                                     isLoading={isGenerating}
                                     hasGenerated={hasGenerated}
                                 />
-                                <PromptRulesCard 
-                                    userPrompt={userPrompt}
-                                    onGenerateTags={handleGenerateTags}
-                                    isTagLoading={isTagLoading}
-                                    recommendedTags={recommendedTags}
-                                    selectedTags={selectedTags}
-                                    onTagSelect={handleTagSelect}
+                                <PromptEnhancerCard 
+                                    prompt={enhancerPrompt}
+                                    setPrompt={setEnhancerPrompt}
+                                    onCreateVariations={handleOpenVariationModal}
+                                    isLoading={isCreatingVariations}
                                 />
                                 <PromptBGCard
                                     prompt={promptBG}
@@ -436,7 +482,7 @@ export default function App() {
                                       history={history} 
                                       isLoading={isGenerating}
                                       onSave={handleSavePromptFromHistory}
-                                      userPrompt={userPrompt}
+                                      userPrompt={tableContextPrompt}
                                     />
                                 </div>
                                 </div>
