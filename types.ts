@@ -21,3 +21,10 @@ export interface VectorBGOptions {
   iconDesign: string;
   iconType: string;
 }
+
+export interface VariationOptions {
+  object: boolean;
+  pattern: boolean;
+  shape: boolean;
+  color: boolean;
+}
