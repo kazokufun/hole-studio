@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import type { PromptHistoryEntry, NotificationEntry, PromptBGOptions, VectorBGOptions } from './types';
 import { analyzeImage, generatePromptsFromText, generateTagsFromText, generateMultipleBackgroundPrompts, generateVectorPrompts } from './services/geminiService';
-import { playAudio } from './services/audioService';
+import { playAudio, setSoundEnabled } from './services/audioService';
 import { ImageAndResultCard } from './components/ImageAndResultCard';
 import { PromptInputCard } from './components/PromptInputCard';
 import { PromptRulesCard } from './components/PromptRulesCard';
@@ -20,11 +20,21 @@ import { VectorBGModal } from './components/VectorBGModal';
 
 const CUSTOM_PROMPTS_STORAGE_KEY = 'customUserPrompts';
 const ANIMATION_ENABLED_STORAGE_KEY = 'isAnimationEnabled';
+const SOUND_ENABLED_STORAGE_KEY = 'isSoundEnabled';
 
 export default function App() {
   const [isAnimationEnabled, setIsAnimationEnabled] = useState<boolean>(() => {
     try {
         const saved = localStorage.getItem(ANIMATION_ENABLED_STORAGE_KEY);
+        return saved ? JSON.parse(saved) : true;
+    } catch {
+        return true;
+    }
+  });
+
+  const [isSoundEnabled, setIsSoundEnabled] = useState<boolean>(() => {
+    try {
+        const saved = localStorage.getItem(SOUND_ENABLED_STORAGE_KEY);
         return saved ? JSON.parse(saved) : true;
     } catch {
         return true;
@@ -107,6 +117,21 @@ export default function App() {
         console.error("Failed to save animation setting to localStorage", error);
     }
   }, [isAnimationEnabled]);
+  
+  // Effect to save sound preference to localStorage
+  useEffect(() => {
+    try {
+        localStorage.setItem(SOUND_ENABLED_STORAGE_KEY, JSON.stringify(isSoundEnabled));
+    } catch (error) {
+        console.error("Failed to save sound setting to localStorage", error);
+    }
+  }, [isSoundEnabled]);
+
+  // Effect to update the audio service with the current preference
+  useEffect(() => {
+    setSoundEnabled(isSoundEnabled);
+  }, [isSoundEnabled]);
+
 
   // Effect to save custom prompts to localStorage whenever they change
   useEffect(() => {
@@ -337,6 +362,8 @@ export default function App() {
                 setApiKeys={setApiKeys}
                 isAnimationEnabled={isAnimationEnabled}
                 setIsAnimationEnabled={setIsAnimationEnabled}
+                isSoundEnabled={isSoundEnabled}
+                setIsSoundEnabled={setIsSoundEnabled}
             />
             <PromptBGModal
                 isOpen={isPromptBGModalOpen}
