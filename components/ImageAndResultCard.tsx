@@ -1,4 +1,5 @@
 
+
 import React, { useCallback, useState } from 'react';
 import { GlassCard } from './shared/GlassCard';
 import { ButtonAnimations } from './shared/ButtonAnimations';
@@ -135,7 +136,7 @@ export const ImageAndResultCard: React.FC<ImageAndResultCardProps> = ({
                     <Loader className="w-32 h-32" />
                  </div>
             ) : (
-                <p className="whitespace-pre-wrap">{resultPrompt || "Analysis of your image will appear here, structured as:\n\nNama Gambar:\nGaya Gambar:\nDetail Objek:\nPrompt Gambar:"}</p>
+                <p className="whitespace-pre-wrap">{resultPrompt || "Analysis of your image will appear here, structured as:\n\nNama Gambar: (Indonesian)\nGaya Gambar: (Indonesian)\nDetail Objek: (Indonesian)\nPrompt Gambar: (English)"}</p>
             )}
         </div>
       </div>
