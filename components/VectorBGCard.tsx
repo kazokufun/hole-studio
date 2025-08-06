@@ -12,7 +12,7 @@ interface VectorBGCardProps {
 export const VectorBGCard: React.FC<VectorBGCardProps> = ({ prompt, setPrompt, onGenerate, isLoading }) => {
   return (
     <GlassCard className="p-6 flex flex-col h-full font-mono text-white/90">
-      <h3 className="text-sm font-bold tracking-widest mb-1 text-white/70">VECTORBG:</h3>
+      <h3 className="text-sm font-bold tracking-widest mb-1 text-white/70">Vector Design</h3>
       <p className="text-xs text-white/60 mb-2">Write Simple Text for Vector</p>
       <textarea
         value={prompt}
