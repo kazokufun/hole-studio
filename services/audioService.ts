@@ -1,5 +1,16 @@
 // Global audio context
 let audioContext: AudioContext | null = null;
+// Global sound enabled flag
+let isSoundEnabled = true;
+
+/**
+ * Sets whether sounds should be played.
+ * @param enabled true to enable sound, false to disable.
+ */
+export const setSoundEnabled = (enabled: boolean) => {
+    isSoundEnabled = enabled;
+};
+
 
 const initAudioContext = () => {
     if (!audioContext) {
@@ -38,6 +49,11 @@ export const unlockAudio = () => {
  * @param soundUrl The path to the audio file (e.g., '/tombol.mp3').
  */
 export const playAudio = (soundUrl: string) => {
+  // If sound is disabled, do nothing.
+  if (!isSoundEnabled) {
+      return;
+  }
+  
   // Ensure the context is initialized, though unlockAudio should have been called first.
   initAudioContext();
   
