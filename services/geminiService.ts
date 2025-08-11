@@ -188,6 +188,7 @@ export const generatePhotographyPrompts = async (
                 - Mention composition techniques (e.g., rule of thirds, leading lines, depth of field).
                 - The final output should feel like a recipe for a professional photographer to capture a stunning image.
                 - DO NOT include artist names.
+                - **Generate Unique Prompts:** Each time this request is made, even with the same input, you must generate a completely new and different set of 10 prompts. Avoid repeating previous suggestions.
 
                 Return your response as a JSON array of objects, where each object has a "title" and a "prompt" key.
             `;
@@ -271,6 +272,7 @@ export const generatePromptVariations = async (
                 2.  **Follow Variation Rules:** ${variationInstructions} All other aspects of the prompt not mentioned for modification should remain as consistent as possible with the base prompt.
                 3.  **Be Creative:** Within the given constraints, be highly creative and imaginative.
                 4.  **No Forbidden Content:** Do not include artist names, copyrighted material, or trademarks.
+                5.  **Unique Output:** This is a new request. Ensure the 10 variations are unique and completely different from any set you have generated before for this same base prompt.
 
                 Return your response as a JSON array of objects, where each object has a "title" and a "prompt" key.
             `;
@@ -395,6 +397,7 @@ export const generateMultipleBackgroundPrompts = async (
                 - DO NOT include copyrighted style names (e.g., "in the style of Disney").
                 - DO NOT include any company logos or trademarked brand names.
                 - Focus exclusively on descriptive language that conveys the visual and technical qualities of the desired background image.
+                - **New Generation:** Every time you run this, generate a completely fresh and different set of 10 prompts, even for the same input idea.
 
                 Return your response as a JSON array of objects, where each object has a "title" and a "prompt" key.
             `;
@@ -490,6 +493,7 @@ export const generateVectorPrompts = async (
                 - DO NOT include copyrighted logos, characters, or style names (e.g., "in the style of Disney", "Nike logo").
                 - DO NOT include any company logos or trademarked brand names.
                 - Focus exclusively on descriptive language that conveys the visual and technical qualities of the desired vector image.
+                - **Unique Generation:** Every time this request is made, generate a completely new and different set of 10 prompts. Do not repeat prompts from previous requests for the same idea.
 
                 Return your response as a JSON array of objects, where each object has a "title" and a "prompt" key.
             `;
