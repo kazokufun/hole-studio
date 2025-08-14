@@ -117,6 +117,8 @@ export const generatePromptsFromText = async (
                 User Request: "${userRequest}"
                 ${tagInstructions}
 
+                **VERY IMPORTANT RULE:** Each individual "prompt" you generate in the JSON response MUST be a maximum of 800 characters long.
+
                 Return your response as a JSON array of objects, where each object has a "title" and a "prompt" key.
             `;
 
@@ -136,7 +138,7 @@ export const generatePromptsFromText = async (
                                 },
                                 prompt: {
                                     type: Type.STRING,
-                                    description: "A detailed and creative text-to-image prompt."
+                                    description: "A detailed and creative text-to-image prompt, under 800 characters."
                                 }
                             },
                             required: ["title", "prompt"]
@@ -181,6 +183,7 @@ export const generatePhotographyPrompts = async (
                 Photography Theme: "${theme}"
 
                 **VERY IMPORTANT INSTRUCTIONS:**
+                - **Length Constraint:** Each individual "prompt" in the JSON response MUST NOT exceed 800 characters.
                 - Each prompt must be extremely detailed and structured for a professional photographic look.
                 - Include specific camera settings (e.g., aperture like f/1.8, shutter speed like 1/1000s, ISO like 100).
                 - Specify lens types (e.g., 85mm prime lens, 24-70mm zoom, macro lens).
@@ -209,7 +212,7 @@ export const generatePhotographyPrompts = async (
                                 },
                                 prompt: {
                                     type: Type.STRING,
-                                    description: "A detailed and creative text-to-image prompt for professional photography, including camera settings and lighting."
+                                    description: "A detailed and creative text-to-image prompt for professional photography, under 800 characters, including camera settings and lighting."
                                 }
                             },
                             required: ["title", "prompt"]
@@ -268,11 +271,12 @@ export const generatePromptVariations = async (
                 "${basePrompt}"
 
                 **VERY IMPORTANT INSTRUCTIONS:**
-                1.  **Maintain the Artistic Style:** The core artistic style of the base prompt (e.g., 'photorealistic', 'anime', 'watercolor', '3D render') MUST be preserved in all variations. This is the most critical rule.
-                2.  **Follow Variation Rules:** ${variationInstructions} All other aspects of the prompt not mentioned for modification should remain as consistent as possible with the base prompt.
-                3.  **Be Creative:** Within the given constraints, be highly creative and imaginative.
-                4.  **No Forbidden Content:** Do not include artist names, copyrighted material, or trademarks.
-                5.  **Unique Output:** This is a new request. Ensure the 10 variations are unique and completely different from any set you have generated before for this same base prompt.
+                1.  **Length Constraint:** Each individual "prompt" you generate in the JSON response MUST be a maximum of 800 characters long.
+                2.  **Maintain the Artistic Style:** The core artistic style of the base prompt (e.g., 'photorealistic', 'anime', 'watercolor', '3D render') MUST be preserved in all variations. This is the most critical rule.
+                3.  **Follow Variation Rules:** ${variationInstructions} All other aspects of the prompt not mentioned for modification should remain as consistent as possible with the base prompt.
+                4.  **Be Creative:** Within the given constraints, be highly creative and imaginative.
+                5.  **No Forbidden Content:** Do not include artist names, copyrighted material, or trademarks.
+                6.  **Unique Output:** This is a new request. Ensure the 10 variations are unique and completely different from any set you have generated before for this same base prompt.
 
                 Return your response as a JSON array of objects, where each object has a "title" and a "prompt" key.
             `;
@@ -293,7 +297,7 @@ export const generatePromptVariations = async (
                                 },
                                 prompt: {
                                     type: Type.STRING,
-                                    description: "A detailed and creative text-to-image prompt variation."
+                                    description: "A detailed and creative text-to-image prompt variation, under 800 characters."
                                 }
                             },
                             required: ["title", "prompt"]
@@ -393,6 +397,7 @@ export const generateMultipleBackgroundPrompts = async (
                 Generate 10 different variations. They should explore different angles, compositions, and interpretations of the core idea while adhering to the chosen characteristics.
 
                 **VERY IMPORTANT RULES TO FOLLOW:**
+                - **Length Constraint:** Each individual "prompt" in the JSON response MUST NOT exceed 800 characters.
                 - DO NOT include any specific artist names (e.g., "by Greg Rutkowski").
                 - DO NOT include copyrighted style names (e.g., "in the style of Disney").
                 - DO NOT include any company logos or trademarked brand names.
@@ -418,7 +423,7 @@ export const generateMultipleBackgroundPrompts = async (
                                 },
                                 prompt: {
                                     type: Type.STRING,
-                                    description: "A detailed and creative text-to-image prompt for a background."
+                                    description: "A detailed and creative text-to-image prompt for a background, under 800 characters."
                                 }
                             },
                             required: ["title", "prompt"]
@@ -488,6 +493,7 @@ export const generateVectorPrompts = async (
                 ${collectionInstruction ? `\n**VERY IMPORTANT SPECIAL INSTRUCTION:**\n${collectionInstruction}\n` : ''}
 
                 **GENERAL RULES TO FOLLOW:**
+                - **Length Constraint:** Each individual "prompt" in the JSON response MUST NOT exceed 800 characters.
                 - Focus on creating prompts for **vector graphics**. This means clean lines, flat colors, gradients, and shapes. Avoid photorealistic details.
                 - DO NOT include any specific artist names (e.g., "by Artgerm").
                 - DO NOT include copyrighted logos, characters, or style names (e.g., "in the style of Disney", "Nike logo").
@@ -514,7 +520,7 @@ export const generateVectorPrompts = async (
                                 },
                                 prompt: {
                                     type: Type.STRING,
-                                    description: "A detailed and creative text-to-image prompt for a vector graphic or a collection of graphics."
+                                    description: "A detailed and creative text-to-image prompt for a vector graphic or a collection of graphics, under 800 characters."
                                 }
                             },
                             required: ["title", "prompt"]
