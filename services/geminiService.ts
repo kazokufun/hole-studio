@@ -493,8 +493,9 @@ export const generateVectorPrompts = async (
                 ${collectionInstruction ? `\n**VERY IMPORTANT SPECIAL INSTRUCTION:**\n${collectionInstruction}\n` : ''}
 
                 **GENERAL RULES TO FOLLOW:**
+                - **Critical Color Rule:** The generated prompts MUST exclusively describe vector art using **flat colors only**. Explicitly forbid and avoid any mention of gradients, mesh gradients, color transitions, or complex shading. The final output must have a clean, solid-color appearance.
+                - **Style Focus:** Prompts should focus on vector graphics attributes like clean lines, bold shapes, and minimalistic forms. Avoid any photorealistic details.
                 - **Length Constraint:** Each individual "prompt" in the JSON response MUST NOT exceed 800 characters.
-                - Focus on creating prompts for **vector graphics**. This means clean lines, flat colors, gradients, and shapes. Avoid photorealistic details.
                 - DO NOT include any specific artist names (e.g., "by Artgerm").
                 - DO NOT include copyrighted logos, characters, or style names (e.g., "in the style of Disney", "Nike logo").
                 - DO NOT include any company logos or trademarked brand names.
