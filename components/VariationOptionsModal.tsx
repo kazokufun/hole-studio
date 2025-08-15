@@ -20,7 +20,9 @@ const OPTIONS = [
     { key: 'object', label: 'Objek' },
     { key: 'pattern', label: 'Pola' },
     { key: 'shape', label: 'Bentuk' },
-    { key: 'color', label: 'Warna' }
+    { key: 'color', label: 'Warna' },
+    { key: 'background', label: 'Latar Belakang' },
+    { key: 'text', label: 'Teks' },
 ] as const;
 
 
@@ -33,7 +35,9 @@ export const VariationOptionsModal: React.FC<VariationOptionsModalProps> = ({
       object: false,
       pattern: false,
       shape: false,
-      color: false
+      color: false,
+      background: false,
+      text: false,
   });
 
   if (!isOpen) return null;
