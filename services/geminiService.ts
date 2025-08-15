@@ -253,6 +253,8 @@ export const generatePromptVariations = async (
     if (options.pattern) modifications.push('patterns and textures');
     if (options.shape) modifications.push('the overall shapes and forms');
     if (options.color) modifications.push('the color palette and lighting');
+    if (options.background) modifications.push('the background elements and environment');
+    if (options.text) modifications.push('any text or typography elements');
     
     let variationInstructions = '';
     if (modifications.length > 0) {
