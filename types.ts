@@ -27,4 +27,6 @@ export interface VariationOptions {
   pattern: boolean;
   shape: boolean;
   color: boolean;
+  background: boolean;
+  text: boolean;
 }
